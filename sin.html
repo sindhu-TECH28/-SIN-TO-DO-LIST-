@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>To-Do List</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      background: #fdf6f0;
+      font-family: 'Patrick Hand', cursive;
+      display: flex;
+      justify-content: center;
+      margin-top: 50px;
+    }
+
+    .notebook {
+      background: #fff3b0;
+      width: 350px;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #ff7eb9;
+      font-size: 28px;
+      margin-bottom: 15px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+
+    input {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-bottom: 2px solid #ccc;
+      background: transparent;
+      font-family: inherit;
+      font-size: 16px;
+    }
+
+    button {
+      background: #a0e7e5;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .task-text {
+      flex: 1;
+      margin-left: 10px;
+    }
+
+    .done {
+      text-decoration: line-through;
+      color: gray;
+    }
+
+    .checkbox {
+      cursor: pointer;
+    }
+
+    .delete {
+      background: #ffaeae;
+      margin-left: 10px;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div class="notebook">
+  <h2>To Do List</h2>
+
+  <div class="input-row">
+    <input id="taskInput" placeholder="Write something..." />
+    <button onclick="addTask()">Add</button>
+  </div>
+
+  <ul id="taskList"></ul>
+</div>
+
+<script>
+const { createClient } = supabase;
+const client = createClient(
+  "https://zjrucicpujpupjinwmww.supabase.co",
+  "sb_publishable_9HB0ah1caLhENnn0rolGOA_loq0hCpY"
+);
+
+async function loadTasks() {
+  const { data } = await client.from("tasks").select("*");
+  const list = document.getElementById("taskList");
+  list.innerHTML = "";
+
+  data.forEach(task => {
+    const li = document.createElement("li");
+
+    li.innerHTML = `
+      <div style="display:flex; align-items:center;">
+        <input type="checkbox" class="checkbox" 
+          ${task.is_completed ? "checked" : ""} 
+          onclick="toggleTask(${task.id}, ${task.is_completed})">
+        <span class="task-text ${task.is_completed ? 'done' : ''}">
+          ${task.task}
+        </span>
+      </div>
+      <button class="delete" onclick="deleteTask(${task.id})">X</button>
+    `;
+
+    list.appendChild(li);
+  });
+}
+
+async function addTask() {
+  const input = document.getElementById("taskInput");
+  const text = input.value;
+
+  if (!text) return;
+
+  await client.from("tasks").insert([{ task: text, is_completed: false }]);
+
+  input.value = "";
+  loadTasks();
+}
+
+async function toggleTask(id, current) {
+  await client
+    .from("tasks")
+    .update({ is_completed: !current })
+    .eq("id", id);
+
+  loadTasks();
+}
+
+async function deleteTask(id) {
+  await client.from("tasks").delete().eq("id", id);
+  loadTasks();
+}
+
+loadTasks();
+</script>
+
+</body>
+</html>
