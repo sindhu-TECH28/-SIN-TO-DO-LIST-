@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>To-Do App</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body {
+      font-family: Arial;
+      background: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      margin-top: 50px;
+    }
+    .app {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+    }
+    input {
+      width: 70%;
+      padding: 10px;
+    }
+    button {
+      padding: 10px;
+      margin-left: 5px;
+    }
+    li {
+      margin: 10px 0;
+      display: flex;
+      justify-content: space-between;
+    }
+    .done {
+      text-decoration: line-through;
+      color: gray;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <h2>My To-Do List</h2>
+  <input id="taskInput" placeholder="Enter task" />
+  <button onclick="addTask()">Add</button>
+  <ul id="taskList"></ul>
+</div>
+
+<script>
+const supabase = supabase.createClient(
+  "https://zjrucicpujpupjinwmww.supabase.co",
+  "sb_publishable_9HB0ah1caLhENnn0rolGOA_loq0hCpY"
+);
+
+// Load tasks
+async function loadTasks() {
+  const { data } = await supabase.from("tasks").select("*");
+  const list = document.getElementById("taskList");
+  list.innerHTML = "";
+
+  data.forEach(task => {
+    const li = document.createElement("li");
+
+    li.innerHTML = `
+      <span class="${task.is_completed ? 'done' : ''}">
+        ${task.task}
+      </span>
+      <div>
+        <button onclick="toggleTask(${task.id}, ${task.is_completed})">✔</button>
+        <button onclick="deleteTask(${task.id})">❌</button>
+      </div>
+    `;
+
+    list.appendChild(li);
+  });
+}
+
+// Add task
+async function addTask() {
+  const input = document.getElementById("taskInput");
+  const text = input.value;
+
+  if (!text) return;
+
+  await supabase.from("tasks").insert([{ task: text, is_completed: false }]);
+
+  input.value = "";
+  loadTasks();
+}
+
+// Toggle complete
+async function toggleTask(id, current) {
+  await supabase
+    .from("tasks")
+    .update({ is_completed: !current })
+    .eq("id", id);
+
+  loadTasks();
+}
+
+// Delete task
+async function deleteTask(id) {
+  await supabase.from("tasks").delete().eq("id", id);
+  loadTasks();
+}
+
+// Initial load
+loadTasks();
+</script>
+
+</body>
+</html>
